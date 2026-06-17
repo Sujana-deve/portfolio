@@ -1,0 +1,26 @@
+# Environment — never commit
+.env
+*.env
+.env.*
+
+# Python
+__pycache__/
+*.pyc
+venv/
+env/
+
+# Django
+db.sqlite3
+staticfiles/
+
+# Node
+node_modules/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
