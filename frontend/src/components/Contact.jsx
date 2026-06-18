@@ -3,6 +3,52 @@ import { motion } from 'framer-motion';
 
 export default function Contact() {
   const [activeField, setActiveField] = useState('idle'); // 'name', 'email', 'message', 'idle'
+  
+  // 1. Form state management
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [status, setStatus] = useState('idle'); // 'idle', 'submitting', 'success', 'error'
+
+  // 2. Handle input text changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // 3. Handle actual backend submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Simple validation safeguard
+    if (!formData.name || !formData.email || !formData.message) {
+      alert("Please fill out all fields before sending.");
+      return;
+    }
+
+    setStatus('submitting');
+
+    try {
+      // Pulls dynamic API base URL configured in your Netlify Environment variables
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://suzanaacharya.pythonanywhere.com';
+      
+      const response = await fetch(`${apiBaseUrl}/api/contact/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        setStatus('success');
+        setFormData({ name: '', email: '', message: '' }); // Clear inputs on success
+      } else {
+        setStatus('error');
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      setStatus('error');
+    }
+  };
 
   return (
     <section id="contact" style={{ background: 'var(--cream)', padding: '80px 24px 60px 24px', position: 'relative' }}>
@@ -88,7 +134,7 @@ export default function Contact() {
         }} className="contact-card-grid grid-paper">
           
           {/* —— LEFT SIDE: Direct Static Details —— */}
-          <div style={{ display: 'flex', flexType: 'column', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
               <span style={{ fontFamily: 'var(--font-hand)', fontSize: '1.4rem', color: 'var(--rust)', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
                 Say hello
@@ -137,7 +183,7 @@ export default function Contact() {
             padding: '28px 24px',
             boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.04)'
           }}>
-            <form onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               
               {/* Input Name */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -146,7 +192,10 @@ export default function Contact() {
                 </label>
                 <input 
                   type="text" 
-                  placeholder="" 
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
                   onFocus={() => setActiveField('name')}
                   onBlur={() => setActiveField('idle')}
                   style={{
@@ -171,7 +220,10 @@ export default function Contact() {
                 </label>
                 <input 
                   type="email" 
-                  placeholder="" 
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
                   onFocus={() => setActiveField('email')}
                   onBlur={() => setActiveField('idle')}
                   style={{
@@ -196,6 +248,10 @@ export default function Contact() {
                 </label>
                 <textarea 
                   rows="4"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
                   placeholder="Let's work on something together..." 
                   onFocus={() => setActiveField('message')}
                   onBlur={() => setActiveField('idle')}
@@ -215,9 +271,10 @@ export default function Contact() {
                 />
               </div>
 
-              {/* Submit Action */}
+              {/* Submit Action Button */}
               <button 
                 type="submit"
+                disabled={status === 'submitting'}
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontWeight: 700,
@@ -225,19 +282,31 @@ export default function Contact() {
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
                   color: 'var(--paper)',
-                  background: 'var(--brown)',
+                  background: status === 'submitting' ? 'var(--brown-light)' : 'var(--brown)',
                   border: '2px solid var(--brown)',
                   borderRadius: '4px',
                   padding: '12px',
-                  cursor: 'pointer',
+                  cursor: status === 'submitting' ? 'not-allowed' : 'pointer',
                   boxShadow: '0 3px 0 var(--ink)',
                   marginTop: '6px',
                   transition: 'all 0.1s ease'
                 }}
-                className="hover:translate-y-[1px] hover:shadow-[0_2px_0_var(--ink)] active:translate-y-[3px] active:shadow-none"
+                className={status === 'submitting' ? "" : "hover:translate-y-[1px] hover:shadow-[0_2px_0_var(--ink)] active:translate-y-[3px] active:shadow-none"}
               >
-                Send Message ✉️
+                {status === 'submitting' ? 'Sending Message...' : 'Send Message ✉️'}
               </button>
+
+              {/* Action Response Notifications */}
+              {status === 'success' && (
+                <p style={{ color: 'green', fontSize: '0.85rem', fontFamily: 'var(--font-body)', fontWeight: 600, margin: '4px 0 0 0', textAlign: 'center' }}>
+                  ✓ Message sent successfully! Check your email soon.
+                </p>
+              )}
+              {status === 'error' && (
+                <p style={{ color: 'var(--rust)', fontSize: '0.85rem', fontFamily: 'var(--font-body)', fontWeight: 600, margin: '4px 0 0 0', textAlign: 'center' }}>
+                  ✗ Failed to send message. Please try again later.
+                </p>
+              )}
 
             </form>
           </div>
