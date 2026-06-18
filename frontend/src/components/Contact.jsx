@@ -1,36 +1,28 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 
-export default function Contact() {
-  const [activeField, setActiveField] = useState('idle'); // 'name', 'email', 'message', 'idle'
-  
-  // 1. Form state management
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-  const [status, setStatus] = useState('idle'); // 'idle', 'submitting', 'success', 'error'
+const Contact = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+  const [status, setStatus] = useState({ type: '', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 2. Handle input text changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
-  // 3. Handle actual backend submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Simple validation safeguard
-    if (!formData.name || !formData.email || !formData.message) {
-      alert("Please fill out all fields before sending.");
-      return;
-    }
-
-    setStatus('submitting');
+    setIsSubmitting(true);
+    setStatus({ type: '', message: '' });
 
     try {
-      // Pulls dynamic API base URL configured in your Netlify Environment variables
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://suzanaacharya.pythonanywhere.com';
-      
-      const response = await fetch(`${apiBaseUrl}/api/contact/`, {
+      const response = await fetch('https://suzanaacharya.pythonanywhere.com/api/contact/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -38,292 +30,110 @@ export default function Contact() {
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        setStatus('success');
-        setFormData({ name: '', email: '', message: '' }); // Clear inputs on success
+        setStatus({ type: 'success', message: data.detail || 'Message sent successfully!' });
+        setFormData({ name: '', email: '', message: '' }); // Clear form
       } else {
-        setStatus('error');
+        // Look for specific validation errors from Django serializers
+        if (data.message) {
+          setStatus({ type: 'error', message: data.message[0] });
+        } else if (data.name) {
+          setStatus({ type: 'error', message: data.name[0] });
+        } else if (data.email) {
+          setStatus({ type: 'error', message: data.email[0] });
+        } else {
+          setStatus({ type: 'error', message: 'Failed to send message. Please try again later.' });
+        }
       }
     } catch (error) {
       console.error('Submission error:', error);
-      setStatus('error');
+      setStatus({ type: 'error', message: 'Network error. Please try again later.' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <section id="contact" style={{ background: 'var(--cream)', padding: '80px 24px 60px 24px', position: 'relative' }}>
-      <div style={{ maxWidth: '960px', margin: '0 auto', position: 'relative' }}>
-        
-        {/* ====================================================
-            PEEK-A-BOO DESK MASCOT EFFECT (Inspired by image_98edbe.jpg)
-            ==================================================== */}
-        <div style={{ 
-          position: 'absolute', 
-          top: '-64px', 
-          right: '80px', 
-          width: '120px', 
-          height: '70px', 
-          zIndex: 0,
-          overflow: 'hidden',
-          pointerEvents: 'none'
-        }} className="mascot-viewport">
-          <motion.div
-            animate={{
-              y: activeField === 'message' ? 45 : activeField === 'idle' ? 15 : 0,
-              rotate: activeField === 'email' ? -4 : activeField === 'name' ? 4 : 0
-            }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-            style={{ width: '100%', height: '100%', position: 'relative' }}
+    <section id="contact" className="py-16 px-4 max-w-4xl mx-auto">
+      <div className="grid md:grid-cols-2 gap-8 bg-[#fdfaf2] p-8 rounded-xl shadow-sm border border-[#eaddca]">
+        <div>
+          <span className="text-amber-700 font-serif italic text-lg">Say hello</span>
+          <h2 className="text-4xl font-serif font-bold text-stone-800 mt-2 mb-6">Let's Connect</h2>
+          <p className="text-stone-600 mb-8">
+            Drop a line if you want to talk about a project build, ask about one of my repositories, or just get in touch.
+          </p>
+          <div className="space-y-4 text-stone-700 text-sm">
+            <div className="p-4 bg-white rounded-lg border border-stone-200">
+              <span className="block text-xs font-bold text-amber-600 uppercase">Email Address</span>
+              <span className="font-semibold text-stone-800">sharmasujana420@gmail.com</span>
+            </div>
+            <div className="p-4 bg-white rounded-lg border border-stone-200">
+              <span className="block text-xs font-bold text-amber-600 uppercase">LinkedIn Connection</span>
+              <a href="https://www.linkedin.com/in/sujana-sharma-b2230b416/" className="font-semibold text-stone-800 hover:underline">linkedin.com/in/sujana-sharma-b2230b416</a>
+            </div>
+            <div className="p-4 bg-white rounded-lg border border-stone-200">
+              <span className="block text-xs font-bold text-amber-600 uppercase">GitHub Repository Profile</span>
+              <a href="https://github.com/Sujana-deve" className="font-semibold text-stone-800 hover:underline">github.com/Sujana-deve</a>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-stone-700 uppercase mb-2">Your Name</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="w-full p-3 bg-[#f0f4f8] border border-stone-300 rounded-lg focus:outline-none focus:border-amber-700 text-stone-800"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-stone-700 uppercase mb-2">Your Email</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full p-3 bg-[#f0f4f8] border border-stone-300 rounded-lg focus:outline-none focus:border-amber-700 text-stone-800"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-stone-700 uppercase mb-2">Message</label>
+            <textarea
+              name="message"
+              rows="4"
+              value={formData.message}
+              onChange={handleChange}
+              required
+              className="w-full p-3 bg-[#f0f4f8] border border-stone-300 rounded-lg focus:outline-none focus:border-amber-700 text-stone-800"
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full p-4 bg-[#3d2a1d] text-white font-bold rounded-lg hover:bg-[#2b1e15] transition-colors disabled:opacity-50"
           >
-            {/* Mascot Head (Pure CSS Vector) */}
-            <div style={{
-              width: '90px',
-              height: '80px',
-              background: 'var(--brown-mid)',
-              borderRadius: '50% 50% 45% 45%',
-              margin: '0 auto',
-              position: 'relative',
-              border: '2px solid var(--brown)'
-            }}>
-              {/* Left Ear */}
-              <div style={{ position: 'absolute', top: '-8px', left: '4px', width: '24px', height: '24px', background: 'var(--brown-mid)', border: '2px solid var(--brown)', borderRadius: '50% 50% 0 50%' }}>
-                <div style={{ width: '10px', height: '10px', background: 'var(--cream-dark)', borderRadius: '50%', margin: '4px auto 0 auto' }} />
-              </div>
-              {/* Right Ear */}
-              <div style={{ position: 'absolute', top: '-8px', right: '4px', width: '24px', height: '24px', background: 'var(--brown-mid)', border: '2px solid var(--brown)', borderRadius: '50% 50% 50% 0' }}>
-                <div style={{ width: '10px', height: '10px', background: 'var(--cream-dark)', borderRadius: '50%', margin: '4px auto 0 auto' }} />
-              </div>
-              {/* Eyes Container */}
-              <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', marginTop: '22px' }}>
-                {/* Left Eye */}
-                <div style={{ width: '14px', height: '14px', background: 'var(--ink)', borderRadius: '50%', position: 'relative' }}>
-                  <motion.div 
-                    animate={{ x: activeField === 'email' ? -2 : activeField === 'name' ? 2 : 0 }}
-                    style={{ width: '5px', height: '5px', background: '#fff', borderRadius: '50%', position: 'absolute', top: '2px', left: '2px' }} 
-                  />
-                </div>
-                {/* Right Eye */}
-                <div style={{ width: '14px', height: '14px', background: 'var(--ink)', borderRadius: '50%', position: 'relative' }}>
-                  <motion.div 
-                    animate={{ x: activeField === 'email' ? -2 : activeField === 'name' ? 2 : 0 }}
-                    style={{ width: '5px', height: '5px', background: '#fff', borderRadius: '50%', position: 'absolute', top: '2px', left: '2px' }} 
-                  />
-                </div>
-              </div>
-              {/* Nose & Snout */}
-              <div style={{ width: '12px', height: '8px', background: 'var(--rust)', borderRadius: '50%', margin: '4px auto 0 auto' }} />
-              <div style={{ width: '16px', height: '6px', borderBottom: '2px solid var(--ink)', borderRadius: '0 0 50% 50%', margin: '-2px auto 0 auto' }} />
+            {isSubmitting ? 'SENDING...' : 'SEND MESSAGE ✉️'}
+          </button>
+
+          {status.message && (
+            <div className={`mt-4 text-center p-3 rounded-lg text-sm font-semibold ${
+              status.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+            }`}>
+              {status.message}
             </div>
-          </motion.div>
-        </div>
-
-        {/* ====================================================
-            MAIN SPLIT CONTENT WRAPPER
-            ==================================================== */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1.1fr', 
-          gap: '40px',
-          background: 'var(--paper)',
-          border: '2px solid var(--brown)',
-          borderRadius: '8px',
-          padding: '40px',
-          boxShadow: '0 6px 0 var(--brown), 0 12px 24px rgba(74,46,26,0.08)',
-          position: 'relative',
-          zIndex: 1
-        }} className="contact-card-grid grid-paper">
-          
-          {/* —— LEFT SIDE: Direct Static Details —— */}
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <span style={{ fontFamily: 'var(--font-hand)', fontSize: '1.4rem', color: 'var(--rust)', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
-                Say hello
-              </span>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2.4rem', fontWeight: 800, color: 'var(--ink)', margin: '0 0 16px 0' }}>
-                Let's Connect
-              </h2>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--brown-light)', lineHeight: 1.6, margin: '0 0 32px 0', maxWidth: '340px' }}>
-                Drop a line if you want to talk about a project build, ask about one of my repositories, or just get in touch.
-              </p>
-            </div>
-
-            {/* Structured Info Card Rows */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {[
-                { label: 'Email Address', val: 'sharmasujana420@gmail.com', href: 'mailto:sharmasujana420@gmail.com', icon: '✉️' },
-                { label: 'LinkedIn Connection', val: 'https://www.linkedin.com/in/sujana-sharma-b2230b416/', href: 'https://www.linkedin.com/in/sujana-sharma-b2230b416/', icon: '💼' },
-                { label: 'GitHub Repository Profile', val: 'github.com/Sujana-deve', href: 'https://github.com/Sujana-deve', icon: '🛠️' }
-              ].map(info => (
-                <a key={info.label} href={info.href} target="_blank" rel="noreferrer" style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  background: 'var(--paper-dark)',
-                  border: '1px solid var(--brown-xfaint)',
-                  borderRadius: '6px',
-                  padding: '12px',
-                  textDecoration: 'none',
-                  transition: 'transform 0.1s ease'
-                }} className="contact-info-row">
-                  <span style={{ fontSize: '1.2rem' }}>{info.icon}</span>
-                  <div>
-                    <span style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 700, color: 'var(--brown-light)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{info.label}</span>
-                    <span style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--ink)', fontWeight: 600 }} className="truncate">{info.val}</span>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* —— RIGHT SIDE: Tangible Clipboard Form Container —— */}
-          <div style={{ 
-            background: 'var(--cream-dark)', 
-            border: '1px solid var(--brown-light)', 
-            borderRadius: '6px', 
-            padding: '28px 24px',
-            boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.04)'
-          }}>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              
-              {/* Input Name */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 700, color: 'var(--brown)', textTransform: 'uppercase' }}>
-                  Your Name
-                </label>
-                <input 
-                  type="text" 
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  onFocus={() => setActiveField('name')}
-                  onBlur={() => setActiveField('idle')}
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '0.88rem',
-                    padding: '10px 12px',
-                    border: '1.5px solid var(--brown-faint)',
-                    borderRadius: '4px',
-                    background: 'var(--paper)',
-                    color: 'var(--ink)',
-                    outline: 'none',
-                    transition: 'border-color 0.15s ease'
-                  }}
-                  className="focus:border-[var(--brown)]"
-                />
-              </div>
-
-              {/* Input Email */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 700, color: 'var(--brown)', textTransform: 'uppercase' }}>
-                  Your Email
-                </label>
-                <input 
-                  type="email" 
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  onFocus={() => setActiveField('email')}
-                  onBlur={() => setActiveField('idle')}
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '0.88rem',
-                    padding: '10px 12px',
-                    border: '1.5px solid var(--brown-faint)',
-                    borderRadius: '4px',
-                    background: 'var(--paper)',
-                    color: 'var(--ink)',
-                    outline: 'none',
-                    transition: 'border-color 0.15s ease'
-                  }}
-                  className="focus:border-[var(--brown)]"
-                />
-              </div>
-
-              {/* Input Message */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 700, color: 'var(--brown)', textTransform: 'uppercase' }}>
-                  Message
-                </label>
-                <textarea 
-                  rows="4"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
-                  placeholder="Let's work on something together..." 
-                  onFocus={() => setActiveField('message')}
-                  onBlur={() => setActiveField('idle')}
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '0.88rem',
-                    padding: '10px 12px',
-                    border: '1.5px solid var(--brown-faint)',
-                    borderRadius: '4px',
-                    background: 'var(--paper)',
-                    color: 'var(--ink)',
-                    outline: 'none',
-                    resize: 'none',
-                    transition: 'border-color 0.15s ease'
-                  }}
-                  className="focus:border-[var(--brown)]"
-                />
-              </div>
-
-              {/* Submit Action Button */}
-              <button 
-                type="submit"
-                disabled={status === 'submitting'}
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 700,
-                  fontSize: '0.8rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  color: 'var(--paper)',
-                  background: status === 'submitting' ? 'var(--brown-light)' : 'var(--brown)',
-                  border: '2px solid var(--brown)',
-                  borderRadius: '4px',
-                  padding: '12px',
-                  cursor: status === 'submitting' ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 3px 0 var(--ink)',
-                  marginTop: '6px',
-                  transition: 'all 0.1s ease'
-                }}
-                className={status === 'submitting' ? "" : "hover:translate-y-[1px] hover:shadow-[0_2px_0_var(--ink)] active:translate-y-[3px] active:shadow-none"}
-              >
-                {status === 'submitting' ? 'Sending Message...' : 'Send Message ✉️'}
-              </button>
-
-              {/* Action Response Notifications */}
-              {status === 'success' && (
-                <p style={{ color: 'green', fontSize: '0.85rem', fontFamily: 'var(--font-body)', fontWeight: 600, margin: '4px 0 0 0', textAlign: 'center' }}>
-                  ✓ Message sent successfully! Check your email soon.
-                </p>
-              )}
-              {status === 'error' && (
-                <p style={{ color: 'var(--rust)', fontSize: '0.85rem', fontFamily: 'var(--font-body)', fontWeight: 600, margin: '4px 0 0 0', textAlign: 'center' }}>
-                  ✗ Failed to send message. Please try again later.
-                </p>
-              )}
-
-            </form>
-          </div>
-
-        </div>
+          )}
+        </form>
       </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .contact-card-grid { grid-template-columns: 1fr !important; gap: 32px !important; padding: 24px !important; }
-          .mascot-viewport { right: 32px !important; }
-          .contact-info-row:hover { transform: none !important; }
-        }
-        @media (min-width: 769px) {
-          .contact-info-row:hover { transform: translateX(3px); }
-        }
-      `}</style>
     </section>
   );
-}
+};
+
+export default Contact;
