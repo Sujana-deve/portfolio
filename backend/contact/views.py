@@ -30,8 +30,6 @@ class ContactView(APIView):
             )
         except Exception as e:
             # Message was saved to DB even if email fails
-            import traceback
-            traceback.print_exc()
             return Response(
                 {"detail": "Message saved but email delivery failed. I'll still see it."},
                 status=status.HTTP_200_OK,
