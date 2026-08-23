@@ -22,7 +22,7 @@ const Contact = () => {
     setStatus({ type: '', message: '' });
 
     try {
-      const response = await fetch('https://suzanaacharya.pythonanywhere.com/api/contact/', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/api/contact/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
