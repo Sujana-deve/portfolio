@@ -84,6 +84,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'https://elegant-sunshine-f40d22.netlify.app',
     os.environ.get('FRONTEND_URL', 'https://sujanasharma.com.np'),
 ]
 
